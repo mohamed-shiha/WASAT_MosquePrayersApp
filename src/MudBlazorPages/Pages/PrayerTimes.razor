@@ -1,0 +1,219 @@
+﻿@page "/"
+@using BlazorMosque.Client.Services
+@using Newtonsoft.Json
+@inject PrayerTimeService PrayerTimesService
+@inject HttpClient httpClient
+@* @using Microsoft.AspNetCore.Components.Authorization *@
+@* @inject AuthenticationStateProvider AuthenticationStateProvider *@
+
+<PageTitle>PrayerTimes</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">PrayerTimes</MudText>
+
+<MudBlazorPages.Components.CountDown nextPrayerText="@nextPrayerText" CounterValue="@CounterValue" ></MudBlazorPages.Components.CountDown>
+
+<MudDataGrid @ref="dataGrid" T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="!isAuthorized"
+EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
+        <PropertyColumn Property="x => timeFormat24? x.Get24AdhanTime() : x.Time.ToShortTimeString()" Title="Adhan" Sortable="false" Editable="false"/>
+        <PropertyColumn Property="x => GetIqamahTime(x)" Title="Iqamah" Sortable="false" >
+             <EditTemplate>
+                 @if (CanEdit(context.Item))
+                {
+                    <MudSwitch @bind-Value="@usingOffset" Color="Color.Primary">Use Offset</MudSwitch>
+                    @if (usingOffset)
+                    {
+                        <MudNumericField @bind-Value="OffsetValue" Label="Iqamah offset" Variant="Variant.Outlined" Step="1" />
+                    }
+                    else
+                    {
+                        <MudTextField T="TimeSpan?" Label="Iqamah" InputType="InputType.Time" @bind-Value="timeEditValue" />
+                    }
+                }
+            </EditTemplate> 
+        </PropertyColumn>
+    </Columns>
+</MudDataGrid>
+
+@* <MudSwitch @bind-Value="@timeFormat24" Color="Color.Primary">Time Format 24</MudSwitch>
+<MudText>@timeFormat24</MudText> *@
+
+<MudSwitch T="bool" Value="@timeFormat24" ValueChanged="OnTimeValueChanged" Color="Color.Primary" Label="Time Format 24" />
+
+<MudExpansionPanels Style="flex:1">
+    <MudExpansionPanel Text="Show Events">
+        @foreach (var message in _events)
+        {
+            <MudText Typo="@Typo.body2">@message</MudText>
+        }
+        @if (_events.Count > 0)
+        {
+            <div class="d-flex">
+                <MudSpacer />
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+            </div>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    MudDataGrid<PrayerTime> dataGrid;
+    private PrayerTimesResult _prayerTimes;
+    private PrayerTimeWithIqamah[] data;
+    private bool timeFormat24 { get; set; } = false;
+    private bool loading;
+    private string loadingString = "loading";
+    private bool isAuthorized { get; set; } = true;
+    //counter
+    private double CounterValue { get; set; }
+    private string nextPrayerText = "loading";
+    private bool _disposed;
+    //edit
+    private bool usingOffset { get; set; }
+    int OffsetValue;
+    TimeSpan? timeEditValue;
+    private List<string> _events = new();
+
+    PrayerSettings settings = new PrayerSettings
+    {
+        HijriOffset = 0,
+        JamaahMethods = new List<string> { "", "", "", "", "" },
+        JamaahOffsets = new List<List<int>>
+        {
+            new List<int> { 0, 15 },
+            new List<int> { 1, 0 },
+            new List<int> { 0, 30 },
+            new List<int> { 0, 15 },
+            new List<int> { 0, 10 },
+            new List<int> { 0, 0 }
+        }
+    };
+
+    private void OnTimeValueChanged(bool value)
+    {
+        timeFormat24 = value;
+        //_prayerTimes = PrayerTimesService.CalculatePrayers(settings);
+        //StateHasChanged();
+    }
+
+    // initial setup
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        //var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        //var user = authState.User;
+
+        // Check if the user is authenticated
+        //isAuthorized = user.Identity != null && user.Identity.IsAuthenticated;
+
+        _prayerTimes =  PrayerTimesService.CalculatePrayers(settings);
+        data = await httpClient.GetFromJsonAsync<PrayerTimeWithIqamah[]>("https://mosqueapp.api.alotaki.com/prayerTimes");
+
+        if(data != null)
+        {
+            for (int i = 0; i < data.Length; i++)
+            {
+                PrayerTimeWithIqamah currentIqamahData = data[i];
+                PrayerTime currentPrayer = i <=5 ? _prayerTimes.Today[i] : _prayerTimes.Today[4];
+
+                if (data[i].Name.ToLower().Contains("shurooq") || i >5)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(data[i].Iqamah))
+                {
+                    var offset = int.Parse(data[i].Offset);
+                    _prayerTimes.Today[i].JamaahTime = _prayerTimes.Today[i].Time.AddMinutes(offset);
+                }else
+                {
+                    _prayerTimes.Today[i].JamaahTime = DateTime.Parse(data[i].Iqamah);
+                }
+            }
+        }
+        loading = data == null;
+        _ = SimulateProgressAsync(); // Fire and forget
+    }
+
+    private bool CanEdit(PrayerTime item)
+    {
+        return !item.Name.Contains("Shurooq", StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    // events
+    void StartedEditingItem(PrayerTime item)
+    {
+        PrayerTimeWithIqamah currentData;
+        if (data != null && CanEdit(item))
+        {
+            currentData = data[item.Index];
+            if (currentData.Iqamah.Length <=0)
+            {
+                usingOffset = true;
+                OffsetValue = int.Parse(currentData.Offset);
+                timeEditValue = null;
+            }else
+            {
+                usingOffset = false;
+                OffsetValue = 0;
+                var hoursAndminutes = currentData.Iqamah.Split(':');
+                var hours = int.Parse(hoursAndminutes[0]);
+                var minutes = int.Parse(hoursAndminutes[1]);
+                timeEditValue = new TimeSpan(hours, minutes, 0);
+            }
+        }
+        //_prayerTimes = PrayerTimesService.CalculatePrayers(settings);
+        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+    }
+
+    void CanceledEditingItem(PrayerTime item)
+    {
+        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+    }
+
+    void CommittedItemChanges(PrayerTime item)
+    {
+        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+    }
+
+    protected string GetIqamahTime(PrayerTime prayer)
+    {
+        if (loading)
+        {
+            return loadingString;
+        }
+
+        if (prayer.Name.Contains("Shurooq", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "N/A";
+        }
+
+        if (timeFormat24)
+        {
+            return prayer.Get24IgamaTime();
+        }
+        return prayer.JamaahTime.ToShortTimeString();
+    }
+    // countdown loop
+    private async Task SimulateProgressAsync()
+    {
+        while (CounterValue < 100 && !_disposed)
+        {
+            if (!loading)
+            {
+                TimeSpan timeLeft = _prayerTimes.Next.Time - DateTime.Now;
+                string formattedTime = timeLeft.ToString(@"hh\:mm\:ss");
+                nextPrayerText = string.Format($"{_prayerTimes.Next.Name} in {formattedTime}");
+                CounterValue = _prayerTimes.CalcPercentage(now:DateTime.Now);
+                StateHasChanged();
+            }
+            await Task.Delay(1000);
+        }
+        _prayerTimes = PrayerTimesService.CalculatePrayers(settings,nowDate: DateTime.Now);
+        CounterValue = _prayerTimes.CalcPercentage();
+    }
+
+
+    public void Dispose() => _disposed = true;
+}

@@ -1,0 +1,21 @@
+﻿@using MudBlazor
+
+<div class="progress-container">
+    <MudProgressLinear Class="custom-progress-bar"
+                       Style="height: 2.5rem;"
+                       Value="@CounterValue"
+                       Max="100"
+                       BufferValue="@BufferValue"
+                       Color="Color.Primary">
+        <!-- Content inside the progress bar -->
+        <div class="progress-text">
+            <MudText Color="Color.Dark" Typo="Typo.h6">@nextPrayerText</MudText>
+        </div>
+    </MudProgressLinear>
+</div>
+
+@code {
+    [Parameter] public double CounterValue { get; set; } = 50; // Current progress value
+    [Parameter] public double BufferValue { get; set; } = 100; // Max value
+    [Parameter] public string nextPrayerText { get; set; } = "50%"; // Text inside the progress bar
+}
