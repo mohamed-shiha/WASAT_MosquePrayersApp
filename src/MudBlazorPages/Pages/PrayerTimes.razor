@@ -14,7 +14,7 @@
     <MudBlazorPages.Components.CountDown nextPrayerText="@nextPrayerText" CounterValue="@CounterValue" ></MudBlazorPages.Components.CountDown>
 </MudPaper>
 @*Grid*@
-<MudDataGrid @ref="dataGrid" T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="!isAuthorized"
+<MudDataGrid T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="!isAuthorized"
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
         <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
@@ -61,14 +61,14 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
 </MudExpansionPanels>
 
 @code {
-    MudDataGrid<PrayerTime> dataGrid;
     private PrayerTimesResult _prayerTimes;
     private PrayerTimeWithIqamah[] data;
     private bool timeFormat24 { get; set; } = false;
     private bool loading;
     private string loadingString = "loading";
-    private string _FridayPrayerTimeString;
-    private string FridayPrayerTimeString { get 
+    private string _FridayPrayerTimeString = "";
+    private string FridayPrayerTimeString { 
+        get 
         {
             _FridayPrayerTimeString = GetJummuhaPrayer();
             return _FridayPrayerTimeString;
@@ -105,9 +105,17 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private string GetJummuhaPrayer()
     {
         string result = "Loading";
-        if(!loading && data != null && data.Length <=6)
+        if(!loading && data != null)
         {
-            result = data[5].Name;
+            var time = DateTime.Parse(data[6].Iqamah);
+            if (timeFormat24)
+            {
+                result = time.ToString("HH:mm");
+            }
+            else
+            {
+                result = time.ToString("tt");
+            }
         }
         return result;
     }
@@ -153,6 +161,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
                     _prayerTimes.Today[i].JamaahTime = DateTime.Parse(data[i].Iqamah);
                 }
             }
+            FridayPrayerTimeString = GetJummuhaPrayer();
         }
         loading = data == null;
         _ = SimulateProgressAsync(); // Fire and forget
