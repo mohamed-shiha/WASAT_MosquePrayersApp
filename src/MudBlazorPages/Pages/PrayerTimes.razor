@@ -35,9 +35,9 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         </PropertyColumn>
     </Columns>
 </MudDataGrid>
-
-@* <MudSwitch @bind-Value="@timeFormat24" Color="Color.Primary">Time Format 24</MudSwitch>
-<MudText>@timeFormat24</MudText> *@
+<MudPaper>
+    <MudText Align="Align.Center">CenterJummuah prayer is fixed at <b>@data[6].Iqamah</b>.</MudText>
+</MudPaper>
 
 <MudSwitch T="bool" Value="@timeFormat24" ValueChanged="OnTimeValueChanged" Color="Color.Primary" Label="Time Format 24" />
 
@@ -89,6 +89,16 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             new List<int> { 0, 0 }
         }
     };
+
+    private string GetJummuhaPrayer()
+    {
+        string result = "Loading";
+        if(!loading && data != null && data.Length <=6)
+        {
+            result = data[5].Name;
+        }
+        return result;
+    }
 
     private void OnTimeValueChanged(bool value)
     {
