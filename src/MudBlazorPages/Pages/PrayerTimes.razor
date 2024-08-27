@@ -9,9 +9,11 @@
 <PageTitle>PrayerTimes</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">PrayerTimes</MudText>
-
-<MudBlazorPages.Components.CountDown nextPrayerText="@nextPrayerText" CounterValue="@CounterValue" ></MudBlazorPages.Components.CountDown>
-
+@*Counter *@
+<MudPaper Elevation="10">
+    <MudBlazorPages.Components.CountDown nextPrayerText="@nextPrayerText" CounterValue="@CounterValue" ></MudBlazorPages.Components.CountDown>
+</MudPaper>
+@*Grid*@
 <MudDataGrid @ref="dataGrid" T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="!isAuthorized"
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
@@ -35,23 +37,24 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         </PropertyColumn>
     </Columns>
 </MudDataGrid>
-<MudPaper>
-    <MudText Align="Align.Center">CenterJummuah prayer is fixed at <b>@data[6].Iqamah</b>.</MudText>
+@*Friday pryaer time*@
+<MudPaper Elevation="10">
+    <MudText Align="Align.Center">Jummuah prayer is fixed at <b>@FridayPrayerTimeString</b>.</MudText>
 </MudPaper>
-
+@*Time format switch*@
 <MudSwitch T="bool" Value="@timeFormat24" ValueChanged="OnTimeValueChanged" Color="Color.Primary" Label="Time Format 24" />
-
+@*debug*@
 <MudExpansionPanels Style="flex:1">
-    <MudExpansionPanel Text="Show Events">
-        @foreach (var message in _events)
+    <MudExpansionPanel Text="Show debug messages">
+        @foreach (var message in debugMessages)
         {
             <MudText Typo="@Typo.body2">@message</MudText>
         }
-        @if (_events.Count > 0)
+        @if (debugMessages.Count > 0)
         {
             <div class="d-flex">
                 <MudSpacer />
-                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => debugMessages.Clear())">Clear</MudButton>
             </div>
         }
     </MudExpansionPanel>
@@ -64,6 +67,14 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private bool timeFormat24 { get; set; } = false;
     private bool loading;
     private string loadingString = "loading";
+    private string _FridayPrayerTimeString;
+    private string FridayPrayerTimeString { get 
+        {
+            _FridayPrayerTimeString = GetJummuhaPrayer();
+            return _FridayPrayerTimeString;
+        }
+        set { _FridayPrayerTimeString = value; }
+    }
     private bool isAuthorized { get; set; } = true;
     //counter
     private double CounterValue { get; set; }
@@ -73,7 +84,8 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private bool usingOffset { get; set; }
     int OffsetValue;
     TimeSpan? timeEditValue;
-    private List<string> _events = new();
+    //debug
+    private List<string> debugMessages = new();
 
     PrayerSettings settings = new PrayerSettings
     {
@@ -174,17 +186,17 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             }
         }
         //_prayerTimes = PrayerTimesService.CalculatePrayers(settings);
-        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+        debugMessages.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
     }
 
     void CanceledEditingItem(PrayerTime item)
     {
-        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+        debugMessages.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
     }
 
     void CommittedItemChanges(PrayerTime item)
     {
-        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
+        debugMessages.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
     }
 
     protected string GetIqamahTime(PrayerTime prayer)
