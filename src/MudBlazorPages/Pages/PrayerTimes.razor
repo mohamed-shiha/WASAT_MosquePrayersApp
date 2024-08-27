@@ -62,7 +62,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
 
 @code {
     private PrayerTimesResult _prayerTimes;
-    private PrayerTimeWithIqamah[] data;
+    private PrayerTimeWithIqamah[] BallyhaunisMosqueData;
     private bool timeFormat24 { get; set; } = false;
     private bool loading;
     private string loadingString = "loading";
@@ -86,6 +86,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     TimeSpan? timeEditValue;
     //debug
     private List<string> debugMessages = new();
+    int maxLoopValue = 99;
 
     PrayerSettings settings = new PrayerSettings
     {
@@ -105,9 +106,9 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private string GetJummuhaPrayer()
     {
         string result = "Loading";
-        if(!loading && data != null)
+        if(!loading && BallyhaunisMosqueData != null)
         {
-            var time = DateTime.Parse(data[6].Iqamah);
+            var time = DateTime.Parse(BallyhaunisMosqueData[6].Iqamah);
             if (timeFormat24)
             {
                 result = time.ToString("HH:mm");
@@ -123,47 +124,53 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private void OnTimeValueChanged(bool value)
     {
         timeFormat24 = value;
-        //_prayerTimes = PrayerTimesService.CalculatePrayers(settings);
-        //StateHasChanged();
     }
 
     // initial setup
     protected override async Task OnInitializedAsync()
     {
-        loading = true;
+        await SetupData(); // must be first line 
+
         //var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         //var user = authState.User;
 
         // Check if the user is authenticated
         //isAuthorized = user.Identity != null && user.Identity.IsAuthenticated;
+        //loading = BallyhaunisMosqueData == null;
+        
+    }
 
-        _prayerTimes =  PrayerTimesService.CalculatePrayers(settings);
-        data = await httpClient.GetFromJsonAsync<PrayerTimeWithIqamah[]>("https://mosqueapp.api.alotaki.com/prayerTimes");
+    async Task SetupData()
+    {
+        loading = true;
+        _prayerTimes = PrayerTimesService.CalculatePrayers(settings);
+        BallyhaunisMosqueData = await httpClient.GetFromJsonAsync<PrayerTimeWithIqamah[]>("https://mosqueapp.api.alotaki.com/prayerTimes");
 
-        if(data != null)
+        if (BallyhaunisMosqueData != null)
         {
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < BallyhaunisMosqueData.Length; i++)
             {
-                PrayerTimeWithIqamah currentIqamahData = data[i];
-                PrayerTime currentPrayer = i <=5 ? _prayerTimes.Today[i] : _prayerTimes.Today[4];
+                PrayerTimeWithIqamah currentIqamahData = BallyhaunisMosqueData[i];
+                PrayerTime currentPrayer = i <= 5 ? _prayerTimes.Today[i] : _prayerTimes.Today[4];
 
-                if (data[i].Name.ToLower().Contains("shurooq") || i >5)
+                if (BallyhaunisMosqueData[i].Name.ToLower().Contains("shurooq") || i > 5)
                 {
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(data[i].Iqamah))
+                if (string.IsNullOrEmpty(BallyhaunisMosqueData[i].Iqamah))
                 {
-                    var offset = int.Parse(data[i].Offset);
+                    var offset = int.Parse(BallyhaunisMosqueData[i].Offset);
                     _prayerTimes.Today[i].JamaahTime = _prayerTimes.Today[i].Time.AddMinutes(offset);
-                }else
+                }
+                else
                 {
-                    _prayerTimes.Today[i].JamaahTime = DateTime.Parse(data[i].Iqamah);
+                    _prayerTimes.Today[i].JamaahTime = DateTime.Parse(BallyhaunisMosqueData[i].Iqamah);
                 }
             }
             FridayPrayerTimeString = GetJummuhaPrayer();
         }
-        loading = data == null;
+        loading = BallyhaunisMosqueData == null;
         _ = SimulateProgressAsync(); // Fire and forget
     }
 
@@ -176,9 +183,9 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     void StartedEditingItem(PrayerTime item)
     {
         PrayerTimeWithIqamah currentData;
-        if (data != null && CanEdit(item))
+        if (BallyhaunisMosqueData != null && CanEdit(item))
         {
-            currentData = data[item.Index];
+            currentData = BallyhaunisMosqueData[item.Index];
             if (currentData.Iqamah.Length <=0)
             {
                 usingOffset = true;
@@ -226,10 +233,11 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         }
         return prayer.JamaahTime.ToShortTimeString();
     }
+
     // countdown loop
     private async Task SimulateProgressAsync()
     {
-        while (CounterValue < 100 && !_disposed)
+        while (CounterValue <= maxLoopValue && !_disposed)
         {
             if (!loading)
             {
@@ -240,8 +248,13 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
                 StateHasChanged();
             }
             await Task.Delay(1000);
+            if (!debugMessages.Contains(CounterValue.ToString()))
+            {
+                debugMessages.Add(CounterValue.ToString());
+            }
         }
-        _prayerTimes = PrayerTimesService.CalculatePrayers(settings,nowDate: DateTime.Now);
+        await SetupData();
+        debugMessages.Add($"max loop {maxLoopValue}");
         CounterValue = _prayerTimes.CalcPercentage();
     }
 
