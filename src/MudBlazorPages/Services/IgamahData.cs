@@ -1,8 +1,7 @@
 ﻿using Newtonsoft.Json;
 
-namespace BlazorMosque.Client.Services
+namespace MudBlazorPages.Models
 {
- // Ensure you have the Newtonsoft.Json package installed
 
     public class PrayerTimeWithIqamah
     {
