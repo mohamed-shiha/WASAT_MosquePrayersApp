@@ -1,5 +1,5 @@
 ﻿@page "/"
-@using BlazorMosque.Client.Services
+@using MudBlazorPages.Models
 @using Newtonsoft.Json
 @inject PrayerTimeService PrayerTimesService
 @inject HttpClient httpClient
@@ -115,7 +115,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             }
             else
             {
-                result = time.ToShortTimeString();
+                result = time.ToString("hh:mmtt");
             }
         }
         return result;
@@ -231,7 +231,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         {
             return prayer.Get24IgamaTime();
         }
-        return prayer.JamaahTime.ToString("hh:mm:tt");
+        return prayer.JamaahTime.ToString("hh:mmtt");
     }
 
     protected string GetPrayerTime(PrayerTime prayer)
@@ -245,7 +245,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         {
             return prayer.Get24AdhanTime();
         }
-        return prayer.Time.ToString("hh:mm:tt");
+        return prayer.Time.ToString("hh:mmtt");
     }
 
     // countdown loop
