@@ -18,7 +18,7 @@
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
         <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
-        <PropertyColumn Property="x => timeFormat24? x.Get24AdhanTime() : x.Time.ToShortTimeString()" Title="Adhan" Sortable="false" Editable="false"/>
+        <PropertyColumn Property="x => GetPrayerTime(x)" Title="Adhan" Sortable="false" Editable="false" />
         <PropertyColumn Property="x => GetIqamahTime(x)" Title="Iqamah" Sortable="false" >
              <EditTemplate>
                  @if (CanEdit(context.Item))
@@ -231,7 +231,21 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         {
             return prayer.Get24IgamaTime();
         }
-        return prayer.JamaahTime.ToShortTimeString();
+        return prayer.JamaahTime.ToString("hh:mm:tt");
+    }
+
+    protected string GetPrayerTime(PrayerTime prayer)
+    {
+        if (loading)
+        {
+            return loadingString;
+        }
+
+        if (timeFormat24)
+        {
+            return prayer.Get24AdhanTime();
+        }
+        return prayer.Time.ToString("hh:mm:tt");
     }
 
     // countdown loop
