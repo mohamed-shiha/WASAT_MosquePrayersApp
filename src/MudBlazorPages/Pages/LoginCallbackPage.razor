@@ -1,0 +1,55 @@
+﻿@using MudBlazorPages.Models
+@page "/authentication/login-callback"
+
+@code {
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] HttpClient HttpClient { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        var code = queryParams["code"];
+        if (!string.IsNullOrEmpty(code))
+        {
+            await ExchangeCodeForToken(code);
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+
+    private async Task ExchangeCodeForToken(string code)
+    {
+        var clientId = "YOUR_GOOGLE_CLIENT_ID";
+        var clientSecret = "YOUR_GOOGLE_CLIENT_SECRET";
+        var redirectUri = "https://localhost:7064/authentication/login-callback"; // Ensure it matches your configuration
+        var tokenEndpoint = "https://oauth2.googleapis.com/token";
+
+        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            { "code", code },
+            { "client_id", clientId },
+            { "client_secret", clientSecret },
+            { "redirect_uri", redirectUri },
+            { "grant_type", "authorization_code" }
+        });
+
+        var response = await HttpClient.PostAsync(tokenEndpoint, content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Parse the response JSON and store tokens securely
+        var tokenResponse = System.Text.Json.JsonSerializer.Deserialize<OAuthTokenResponse>(responseContent);
+
+        // Save tokens in localStorage, sessionStorage, or a secure location
+        // For demonstration, we'll just write to console
+        Console.WriteLine($"Access Token: {tokenResponse.AccessToken}");
+        Console.WriteLine($"ID Token: {tokenResponse.IdToken}");
+        
+        // Now, you can use these tokens to authenticate the user in your app
+    }
+}
+
+
