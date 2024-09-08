@@ -1,5 +1,7 @@
-﻿@using MudBlazorPages.Models
+﻿
+@using MudBlazorPages.Models
 @page "/authentication/login-callback"
+@inject ILocalStorageService LocalStorage
 
 @code {
     [Inject] NavigationManager NavigationManager { get; set; }
@@ -58,8 +60,13 @@
         // For demonstration, we'll just write to console
         Console.WriteLine($"login: Access Token: {tokenResponse.AccessToken}");
         Console.WriteLine($"login: ID Token: {tokenResponse.IdToken}");
-        
+
         // Now, you can use these tokens to authenticate the user in your app
+
+        await LocalStorage.SetItemAsStringAsync("Token", tokenResponse.AccessToken);
+        await LocalStorage.SetItemAsStringAsync("TokenID", tokenResponse.IdToken);
+
+        NavigationManager.NavigateTo("/");
     }
 }
 
