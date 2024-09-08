@@ -137,7 +137,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         // Check if the user is authenticated
         //isAuthorized = user.Identity != null && user.Identity.IsAuthenticated;
         //loading = BallyhaunisMosqueData == null;
-        
+
     }
 
     async Task SetupData()
@@ -165,7 +165,23 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
                 }
                 else
                 {
-                    _prayerTimes.Today[i].JamaahTime = DateTime.Parse(BallyhaunisMosqueData[i].Iqamah);
+                    DateTime result;
+                    string iqamahString = BallyhaunisMosqueData[i].Iqamah;
+                    if (!DateTime.TryParse(iqamahString, out result))
+                    {
+                        Console.WriteLine($"error reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
+                        if (iqamahString.Length == 4)
+                        {
+                            iqamahString = iqamahString.Insert(2, ":");
+                            if (!DateTime.TryParse(iqamahString, out result))
+                            {
+                                Console.WriteLine($"error reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
+                                continue;
+                            }
+                        }
+                    }
+                        _prayerTimes.Today[i].JamaahTime = result;
+                        Console.WriteLine($"successfully reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
                 }
             }
             FridayPrayerTimeString = GetJummuhaPrayer();

@@ -18,14 +18,25 @@
         else
         {
             // Handle error
+            Console.WriteLine(" login - Error in authentication/login-callback");
         }
     }
 
     private async Task ExchangeCodeForToken(string code)
     {
-        var clientId = "YOUR_GOOGLE_CLIENT_ID";
-        var clientSecret = "YOUR_GOOGLE_CLIENT_SECRET";
-        var redirectUri = "https://localhost:7064/authentication/login-callback"; // Ensure it matches your configuration
+        var clientId = "248512928387-7pbq5p5jsr4blqdg6lj10vmmteemt0s3.apps.googleusercontent.com";
+        var clientSecret = "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";
+        // Get the base URL (scheme + host + port)
+        var uri = new Uri(NavigationManager.Uri);
+        string baseUrl = $"{uri.Scheme}://{uri.Host}";
+
+        // Add the port if necessary (e.g., localhost with a specific port)
+        if (!uri.IsDefaultPort)
+        {
+            baseUrl += $":{uri.Port}";
+        }
+
+        var redirectUri = $"{baseUrl}/authentication/login-callback"; // Ensure it matches your configuration
         var tokenEndpoint = "https://oauth2.googleapis.com/token";
 
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
@@ -45,8 +56,8 @@
 
         // Save tokens in localStorage, sessionStorage, or a secure location
         // For demonstration, we'll just write to console
-        Console.WriteLine($"Access Token: {tokenResponse.AccessToken}");
-        Console.WriteLine($"ID Token: {tokenResponse.IdToken}");
+        Console.WriteLine($"login: Access Token: {tokenResponse.AccessToken}");
+        Console.WriteLine($"login: ID Token: {tokenResponse.IdToken}");
         
         // Now, you can use these tokens to authenticate the user in your app
     }

@@ -7,10 +7,6 @@
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="Pages\Login.razor" />
-  </ItemGroup>
-
 
 	<ItemGroup>
 		<ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
@@ -23,18 +19,6 @@
     <PackageReference Include="MudBlazor" Version="7.6.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <UpToDateCheckInput Remove="Pages\Login.razor" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="Pages\Login.razor" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Pages\Login.razor" />
   </ItemGroup>
 
 </Project>
