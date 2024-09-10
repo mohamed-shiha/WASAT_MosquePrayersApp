@@ -31,6 +31,14 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+    <script src="https://www.gstatic.com/firebasejs/8.0/firebase.js"></script>
+    <script>
+        var config = {
+            apiKey: "AIzaSyBrHM_MLyHvCljSoC0XZ0Ngbg4HNSafJT8",
+            authDomain: "mosqueapp-433909.firebaseapp.com",
+        };
+        firebase.initializeApp(config);
+    </script>
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
@@ -51,5 +59,6 @@
             }
         }(window.location))
     </script>
+
 </body>
 </html>
