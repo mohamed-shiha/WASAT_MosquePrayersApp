@@ -30,13 +30,14 @@
         var clientSecret = "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";
         // Get the base URL (scheme + host + port)
         var uri = new Uri(NavigationManager.Uri);
-        string baseUrl = $"{uri.Scheme}://{uri.Host}";
+        string baseUrl = "https://mohamed-shiha.github.io/WASAT_MosquePrayersApp";
+        // string baseUrl = $"{uri.Scheme}://{uri.Host}";
 
-        // Add the port if necessary (e.g., localhost with a specific port)
-        if (!uri.IsDefaultPort)
-        {
-            baseUrl += $":{uri.Port}";
-        }
+        // // Add the port if necessary (e.g., localhost with a specific port)
+        // if (!uri.IsDefaultPort)
+        // {
+        //     baseUrl += $":{uri.Port}";
+        // }
 
         var redirectUri = $"{baseUrl}/authentication/login-callback"; // Ensure it matches your configuration
         var tokenEndpoint = "https://oauth2.googleapis.com/token";
