@@ -1,0 +1,97 @@
+﻿@page "/Register"
+@inject NavigationManager NavigationManager
+@inject FirebaseAuthService AuthService
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar SBar
+@inject IJSRuntime JS
+
+<h3>Register</h3>
+
+<MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+    <MudTextField T="string" Label="Email" Required="true" RequiredError="Email is required!"
+                  Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})" @ref="EmailField" />
+    <MudTextField T="string" Label="Password" HelperText="Choose a strong password" @ref="pwField1"
+                  InputType="@PasswordInput"
+                  Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))" Required="true"
+                  RequiredError="Password is required!" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ShowHidePassword" />
+    <MudTextField T="string"
+                  Label="Confirm Password" HelperText="Repeat the password" InputType="@PasswordInput"
+                  Validation="@(new Func<string, string>(PasswordMatch))" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ShowHidePassword" />
+    <div class="d-flex align-center justify-space-between">
+        <MudCheckBox T="bool" Required="true" RequiredError="You must agree" Label="I agree!" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="RegisterClicked" Class="ml-auto">Register</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"  OnClick="RegisterClicked" Class="ml-auto">Test</MudButton>
+    </div>
+</MudForm>
+
+@code {
+
+    public string Password { get; set; } = "superstrong123";
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+
+    bool success;
+    string[] errors = { };
+    MudTextField<string> pwField1;
+    MudTextField<string> EmailField;
+    MudForm form;
+
+    private async Task RegisterClicked()
+    {
+        try
+        {
+            await AuthService.RegisterWithEmailAndPasswordAsync(EmailField.Text, pwField1.Text);
+            SBar.Add($"{EmailField.Text} Registration successful!",Severity.Success);
+            await AuthService.SignInWithEmailAndPasswordAsync(EmailField.Text, pwField1.Text);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            SBar.Add($"Registration failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield return "Password is required!";
+            yield break;
+        }
+        if (pw.Length < 8)
+            yield return "Password must be at least of length 8";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Password must contain at least one capital letter";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Password must contain at least one lowercase letter";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Password must contain at least one digit";
+    }
+
+    private string PasswordMatch(string arg)
+    {
+        if (pwField1.Value != arg)
+            return $"Passwords don't match {arg}";
+        return null;
+    }
+
+    void ShowHidePassword()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+}

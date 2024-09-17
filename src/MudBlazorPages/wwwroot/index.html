@@ -31,14 +31,23 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/8.0/firebase.js"></script>
+    <!-- Firebase SDK for Web -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+
+    <!-- Your Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Initialize Firebase -->
     <script>
-        var config = {
-            apiKey: "AIzaSyBrHM_MLyHvCljSoC0XZ0Ngbg4HNSafJT8",
-            authDomain: "mosqueapp-433909.firebaseapp.com",
-        };
-        firebase.initializeApp(config);
+        // Initialize Firebase
+        console.log(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
+        console.log(firebase);
     </script>
+    <script src="js/firebaseAuth.js"></script>
+
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>

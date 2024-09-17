@@ -1,25 +1,56 @@
 ﻿@page "/login"
-@inject NavigationManager NavigationManager
+@inherits AuthenticatedComponentBase
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar SBar
 
-<h3>Login</h3>
-
-<button @onclick="SignInWithGoogle">Sign in with Google</button>
+<MudText Typo="Typo.h4">Login</MudText>
+<MudForm @ref="form" @bind-IsValid="@success">
+    <MudTextField T="string" Label="Email" Required="true" RequiredError="Email is required!"
+                  Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})" @bind-Value="Email" />
+    <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Text" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" 
+    OnAdornmentClick="ShowHidePassword" AdornmentAriaLabel="Show Password" />
+    <div class="d-flex align-center justify-space-between">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" Class="ml-auto" OnClick="OnSignIn">Login</MudButton>
+    </div>
+</MudForm>
 
 @code {
-    private void SignInWithGoogle()
+
+    private MudForm form;
+    private string Password { get; set; } = "";
+    private string Email { get; set; } = "";
+    private bool success;
+    private bool isShow;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ShowHidePassword()
     {
-        var googleLoginUrl = CreateGoogleLoginUrl();
-        NavigationManager.NavigateTo(googleLoginUrl, true);
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
     }
 
-    private string CreateGoogleLoginUrl()
+    private async void OnSignIn()
     {
-        var clientId = "248512928387-7pbq5p5jsr4blqdg6lj10vmmteemt0s3.apps.googleusercontent.com";
-        var redirectUri = "https://localhost:7064/authentication/login-callback"; // Your redirect URI
-        var responseType = "code";
-        var scope = "openid email profile";
-        var state = Guid.NewGuid().ToString(); // Optional state token to prevent CSRF attacks
-
-        return $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientId}&redirect_uri={redirectUri}&response_type={responseType}&scope={scope}&state={state}";
+        try
+        {
+            await FirebaseAuthService.SignInWithEmailAndPasswordAsync(Email, Password);
+            SBar.Add($"{Email} Logedin successful!", Severity.Success);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            SBar.Add($"Registration failed: {ex.Message}", Severity.Error);
+        }
     }
 }
