@@ -1,30 +1,29 @@
-﻿using Microsoft.JSInterop;
-using System.Threading.Tasks;
+﻿
+using Microsoft.JSInterop;
 
 namespace MudBlazorPages.Services
 {
     public class AuthStateProvider
     {
         private bool _isAuthenticated;
+        private string _userEmail;
+        private string _userRole;
 
-        public bool IsAuthenticated
-        {
-            get => _isAuthenticated;
-            private set
-            {
-                if (_isAuthenticated != value)
-                {
-                    _isAuthenticated = value;
-                    NotifyAuthenticationStateChanged();
-                }
-            }
-        }
+        public bool IsAuthenticated => _isAuthenticated;
+        public string UserEmail => _userEmail;
+        public string UserRole => _userRole;
 
         public event Action OnAuthStateChanged;
 
-        public void SetAuthenticationState(bool isAuthenticated)
+        public void SetAuthenticationState(bool isAuthenticated, string userEmail = null, string userRole = null)
         {
-            IsAuthenticated = isAuthenticated;
+            if (_isAuthenticated != isAuthenticated || _userEmail != userEmail || _userRole != userRole)
+            {
+                _isAuthenticated = isAuthenticated;
+                _userEmail = userEmail;
+                _userRole = userRole;
+                NotifyAuthenticationStateChanged();
+            }
         }
 
         private void NotifyAuthenticationStateChanged() => OnAuthStateChanged?.Invoke();
@@ -50,23 +49,22 @@ namespace MudBlazorPages.Services
         {
             try
             {
-                var token = await _jsRuntime.InvokeAsync<string>("firebaseAuth.signIn", email, password);
+                var result = await _jsRuntime.InvokeAsync<AuthResult>("firebaseAuth.signIn", email, password);
 
-                if (!string.IsNullOrEmpty(token))
+                if (!string.IsNullOrEmpty(result.Token))
                 {
-                    _authStateProvider.SetAuthenticationState(true);
-                    return token;
+                    var role = await _jsRuntime.InvokeAsync<string>("firebaseAuth.getUserRole");
+                    _authStateProvider.SetAuthenticationState(true, result.Email, role);
+                    return result.Token;
                 }
                 else
                 {
-                    // If the token is null or empty, the sign-in was not successful
                     _authStateProvider.SetAuthenticationState(false);
                     throw new Exception("Sign-in failed: No token received");
                 }
             }
             catch (JSException ex)
             {
-                // Handle any JavaScript exceptions (e.g., Firebase auth errors)
                 _authStateProvider.SetAuthenticationState(false);
                 throw new Exception($"Sign-in failed: {ex.Message}");
             }
@@ -79,13 +77,35 @@ namespace MudBlazorPages.Services
 
         public async Task<bool> IsAuthenticatedAsync()
         {
-            var user = await _jsRuntime.InvokeAsync<object>("firebaseAuth.getCurrentUser");
-            return user != null;
+            var user = await _jsRuntime.InvokeAsync<UserInfo>("firebaseAuth.getCurrentUser");
+            var isAuthenticated = user != null;
+            if (isAuthenticated)
+            {
+                var role = await _jsRuntime.InvokeAsync<string>("firebaseAuth.getUserRole");
+                _authStateProvider.SetAuthenticationState(isAuthenticated, user.Email, role);
+            }
+            else
+            {
+                _authStateProvider.SetAuthenticationState(false);
+            }
+            return isAuthenticated;
         }
 
         public async Task<string> GetTokenAsync()
         {
             return await _jsRuntime.InvokeAsync<string>("firebaseAuth.getIdToken");
+        }
+
+        // Inner classes for deserialization
+        private class AuthResult
+        {
+            public string Token { get; set; }
+            public string Email { get; set; }
+        }
+
+        private class UserInfo
+        {
+            public string Email { get; set; }
         }
     }
 

@@ -2,7 +2,7 @@
 @inherits AuthenticatedComponentBase
 @inject PrayerTimeService PrayerTimesService
 @inject HttpClient httpClient
-
+@attribute [RoleAuthorization("admin")]
 
 <PageTitle>PrayerTimes</PageTitle>
 
@@ -16,7 +16,7 @@
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
         <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
-        <PropertyColumn Property="x => GetPrayerTime(x)" Title="Adhan" Sortable="false" Editable="false" />
+        <PropertyColumn Property="x => GetPrayerTime(x)" Title="Adhan" Sortable="false" />
         <PropertyColumn Property="x => GetIqamahTime(x)" Title="Iqamah" Sortable="false" >
              <EditTemplate>
                  @if (CanEdit(context.Item))
@@ -158,21 +158,11 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
                 {
                     DateTime result;
                     string iqamahString = BallyhaunisMosqueData[i].Iqamah;
-                    if (!DateTime.TryParse(iqamahString, out result))
+                    if (!TryGetIqamah(iqamahString,out result))
                     {
-                        Console.WriteLine($"error reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
-                        if (iqamahString.Length == 4)
-                        {
-                            iqamahString = iqamahString.Insert(2, ":");
-                            if (!DateTime.TryParse(iqamahString, out result))
-                            {
-                                Console.WriteLine($"error reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
-                                continue;
-                            }
-                        }
+                        continue;
                     }
-                        _prayerTimes.Today[i].JamaahTime = result;
-                        Console.WriteLine($"successfully reading iqamah time for {BallyhaunisMosqueData[i].Name} from string: {iqamahString}");
+                    _prayerTimes.Today[i].JamaahTime = result;
                 }
             }
             FridayPrayerTimeString = GetJummuhaPrayer();
@@ -181,8 +171,29 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         _ = SimulateProgressAsync(); // Fire and forget
     }
 
+    private bool TryGetIqamah(string inString, out DateTime result)
+    {
+        string iqamahString = inString;
+        if (!DateTime.TryParse(iqamahString, out result))
+        {
+            if (iqamahString.Length == 4)
+            {
+                iqamahString = iqamahString.Insert(2, ":");
+                if (!DateTime.TryParse(iqamahString, out result))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private bool CanEdit(PrayerTime item)
     {
+        if (!IsInRole("admin"))
+        {
+            return false;
+        }
         return !item.Name.Contains("Shurooq", StringComparison.CurrentCultureIgnoreCase);
     }
 
@@ -202,13 +213,23 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             {
                 usingOffset = false;
                 OffsetValue = 0;
-                var hoursAndminutes = currentData.Iqamah.Split(':');
-                var hours = int.Parse(hoursAndminutes[0]);
-                var minutes = int.Parse(hoursAndminutes[1]);
-                timeEditValue = new TimeSpan(hours, minutes, 0);
+                if (currentData.Iqamah.Contains(':'))
+                {
+                    var hoursAndminutes = currentData.Iqamah.Split(':');
+                    var hours = int.Parse(hoursAndminutes[0]);
+                    var minutes = int.Parse(hoursAndminutes[1]);
+                    timeEditValue = new TimeSpan(hours, minutes, 0);
+                }else
+                {
+                    DateTime result;
+                    string iqamahString = currentData.Iqamah;
+                    if (TryGetIqamah(iqamahString, out result))
+                    {
+                        timeEditValue = new TimeSpan(result.Hour, result.Minute, 0);
+                    }
+                }
             }
         }
-        //_prayerTimes = PrayerTimesService.CalculatePrayers(settings);
         debugMessages.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
     }
 
@@ -219,6 +240,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
 
     void CommittedItemChanges(PrayerTime item)
     {
+        //todo update the table 
         debugMessages.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)} OffsetValue = {OffsetValue} timeEditValue = {timeEditValue}");
     }
 

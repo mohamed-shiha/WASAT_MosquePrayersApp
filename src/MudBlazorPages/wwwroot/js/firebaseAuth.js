@@ -1,4 +1,5 @@
-﻿window.firebaseAuth = {
+﻿
+window.firebaseAuth = {
     signIn: function (email, password) {
         return firebase.auth().signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
@@ -39,6 +40,26 @@
                     resolve(null);
                 }
             });
+        });
+    },
+    getUserRole: function () {
+        return new Promise((resolve, reject) => {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                firebase.firestore().collection('user_roles').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            resolve(doc.data().role);
+                        } else {
+                            resolve('user'); // Default role if not set
+                        }
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    });
+            } else {
+                resolve(null);
+            }
         });
     }
 };
