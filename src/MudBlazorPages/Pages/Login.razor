@@ -4,23 +4,35 @@
 @inject ISnackbar SBar
 
 <MudText Typo="Typo.h4">Login</MudText>
-<MudForm @ref="form" @bind-IsValid="@success">
+<MudForm @bind-IsValid="@success">
     <MudTextField T="string" Label="Email" Required="true" RequiredError="Email is required!"
                   Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})" @bind-Value="Email" />
     <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Text" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon"
                   OnAdornmentClick="ShowHidePassword" AdornmentAriaLabel="Show Password" HelperText="Your app password" />
     <div class="d-flex align-center justify-space-between">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" Class="ml-auto" OnClick="OnSignIn">Login</MudButton>
+       @*  <MudButton ButtonType="ButtonType.Submit" DropShadow="true" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success && loading)" Class="ml-auto" OnClick="OnSignIn">Login</MudButton> *@
+
+        <MudButton Disabled="@(!success || loading)" EndIcon="@Icons.Material.Filled.Login" OnClick="OnSignIn" Variant="Variant.Filled" Color="Color.Primary">
+            @if (loading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Color="Color.Primary" Indeterminate="true" />
+                <MudText Class="ms-2">Login</MudText>
+            }
+            else
+            {
+                <MudText>Login</MudText>
+            }
+        </MudButton>
     </div>
 </MudForm>
 
 @code {
 
-    private MudForm form;
     private string Password { get; set; } = "";
     private string Email { get; set; } = "";
     private bool success;
     private bool isShow;
+    private bool loading = false;
     private InputType PasswordInput = InputType.Password;
     private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
 
@@ -42,15 +54,17 @@
 
     private async void OnSignIn()
     {
+        loading = true;
         try
         {
             await AuthService.SignInWithEmailAndPasswordAsync(Email, Password);
-            SBar.Add($"{Email} Logedin successful!", Severity.Success);
-            NavigationManager.NavigateTo("/");
+            SBar.Add($"{Email} Logged in successfully!", Severity.Success);
+            NavigationManager.NavigateTo(NavigationManager.BaseUri);
         }
         catch (Exception ex)
         {
             SBar.Add($"{ex.Message}", Severity.Error);
         }
+        loading = false;
     }
 }

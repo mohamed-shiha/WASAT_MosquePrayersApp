@@ -54,21 +54,24 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
 @*Time format switch*@
 <MudSwitch T="bool" Value="@timeFormat24" ValueChanged="OnTimeValueChanged" Color="Color.Primary" Label="Time Format 24" />
 @*debug*@
-<MudExpansionPanels Style="flex:1">
-    <MudExpansionPanel Text="Show debug messages">
-        @foreach (var message in debugMessages)
-        {
-            <MudText Typo="@Typo.body2">@message</MudText>
-        }
-        @if (debugMessages.Count > 0)
-        {
-            <div class="d-flex">
-                <MudSpacer />
-                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => debugMessages.Clear())">Clear</MudButton>
-            </div>
-        }
-    </MudExpansionPanel>
-</MudExpansionPanels>
+@if (IsInRole("admin"))
+{
+    <MudExpansionPanels Style="flex:1">
+        <MudExpansionPanel Text="Show debug messages">
+            @foreach (var message in debugMessages)
+            {
+                <MudText Typo="@Typo.body2">@message</MudText>
+            }
+            @if (debugMessages.Count > 0)
+            {
+                <div class="d-flex">
+                    <MudSpacer />
+                    <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => debugMessages.Clear())">Clear</MudButton>
+                </div>
+            }
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+}
 
 @code {
     private PrayerTimesResult _prayerTimes;
@@ -88,7 +91,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     //counter
     private double CounterValue { get; set; }
     private string nextPrayerText = "loading";
-    private bool _disposed;
+
     //edit
     private bool usingOffset { get; set; }
     int OffsetValue;
@@ -148,7 +151,6 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         loading = true;
         _prayerTimes = PrayerTimesService.CalculatePrayers(settings);
         BallyhaunisMosqueData = await httpClient.GetFromJsonAsync<PrayerTimeWithIqamah[]>("https://mosqueapp.api.alotaki.com/prayerTimes");
-
         if (BallyhaunisMosqueData != null)
         {
             for (int i = 0; i < BallyhaunisMosqueData.Length; i++)
@@ -180,7 +182,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             FridayPrayerTimeString = GetJummuhaPrayer();
         }
         loading = BallyhaunisMosqueData == null;
-        _ = SimulateProgressAsync(); // Fire and forget
+        _ = CountdownLoopAsync(); // Fire and forget
     }
 
     private bool TryGetIqamah(string inString, out DateTime result)
@@ -321,7 +323,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     }
 
     // countdown loop
-    private async Task SimulateProgressAsync()
+    private async Task CountdownLoopAsync()
     {
         while (CounterValue <= maxLoopValue && !_disposed)
         {
@@ -343,7 +345,4 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         debugMessages.Add($"max loop {maxLoopValue}");
         CounterValue = _prayerTimes.CalcPercentage();
     }
-
-
-    public void Dispose() => _disposed = true;
 }

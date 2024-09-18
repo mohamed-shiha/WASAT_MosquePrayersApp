@@ -17,8 +17,8 @@
     private async void Logout()
     {
         await AuthService.SignOutAsync();
-        NavigationManager.NavigateTo("/");
-        NavigationManager.Refresh();
+        NavigationManager.NavigateTo(NavigationManager.BaseUri);
+        NavigationManager.Refresh(true);
         StateHasChanged();
     }
 }

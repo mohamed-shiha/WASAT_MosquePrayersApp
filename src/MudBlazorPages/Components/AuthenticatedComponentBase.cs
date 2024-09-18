@@ -11,6 +11,7 @@ namespace MudBlazorPages.Components
 
         protected bool IsAuthenticated => AuthStateProvider.IsAuthenticated;
         protected string UserRole => AuthStateProvider.UserRole;
+        protected bool _disposed = false;
 
         protected bool IsInRole(string role) => UserRole == role;
 
@@ -19,8 +20,9 @@ namespace MudBlazorPages.Components
             AuthStateProvider.OnAuthStateChanged += StateHasChanged;
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
+            _disposed = true;
             AuthStateProvider.OnAuthStateChanged -= StateHasChanged;
         }
     }

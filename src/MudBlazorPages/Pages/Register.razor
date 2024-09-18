@@ -20,20 +20,27 @@
                   Validation="@(new Func<string, string>(PasswordMatch))" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ShowHidePassword" />
     <div class="d-flex align-center justify-space-between">
         <MudCheckBox T="bool" Required="true" RequiredError="You must agree" Label="I agree!" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="RegisterClicked" Class="ml-auto">Register</MudButton>
+        <MudButton Disabled="@(!success || loading)" EndIcon="@Icons.Material.Filled.AppRegistration" OnClick="RegisterClicked" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Primary">
+            @if (loading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Color="Color.Primary" Indeterminate="true" />
+                <MudText Class="ms-2">Register</MudText>
+            }
+            else
+            {
+                <MudText>Register</MudText>
+            }
+        </MudButton>
     </div>
 </MudForm>
 
 @code {
 
-    public string Password { get; set; } = "superstrong123";
-
     bool isShow;
     InputType PasswordInput = InputType.Password;
     string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-
-
     bool success;
+    bool loading;
     string[] errors = { };
     MudTextField<string> pwField1;
     MudTextField<string> EmailField;
@@ -41,17 +48,26 @@
 
     private async Task RegisterClicked()
     {
+        loading = true;
+        await form.Validate();
+        if (!form.IsValid)
+        {
+            loading = false;
+            return;
+        }
+
         try
         {
             await AuthService.RegisterWithEmailAndPasswordAsync(EmailField.Text, pwField1.Text);
             SBar.Add($"{EmailField.Text} Registration successful!",Severity.Success);
             await AuthService.SignInWithEmailAndPasswordAsync(EmailField.Text, pwField1.Text);
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateTo(NavigationManager.BaseUri);
         }
         catch (Exception ex)
         {
             SBar.Add($"Registration failed: {ex.Message}", Severity.Error);
         }
+        loading = false;
     }
 
     private IEnumerable<string> PasswordStrength(string pw)

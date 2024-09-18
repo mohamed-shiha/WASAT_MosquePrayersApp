@@ -103,7 +103,6 @@ namespace MudBlazorPages.Services
             public string Token { get; set; }
             public string Email { get; set; }
         }
-
         private class UserInfo
         {
             public string Email { get; set; }
