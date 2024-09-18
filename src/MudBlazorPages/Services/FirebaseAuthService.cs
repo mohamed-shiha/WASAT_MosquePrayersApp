@@ -42,7 +42,8 @@ namespace MudBlazorPages.Services
 
         public async Task<string> RegisterWithEmailAndPasswordAsync(string email, string password)
         {
-            return await _jsRuntime.InvokeAsync<string>("firebaseAuth.register", email, password);
+            string user = await _jsRuntime.InvokeAsync<string>("firebaseAuth.register", email, password);
+            return user;
         }
 
         public async Task<string> SignInWithEmailAndPasswordAsync(string email, string password)

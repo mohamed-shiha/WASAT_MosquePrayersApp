@@ -16,7 +16,14 @@
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
         <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
-        <PropertyColumn Property="x => GetPrayerTime(x)" Title="Adhan" Sortable="false" />
+        <PropertyColumn Property="x => GetPrayerTime(x)" Title="Adhan" Sortable="false">
+            <EditTemplate>
+                @if (CanEditAdhan(context.Item))
+                {
+                    <MudTextField T="TimeSpan?" Label="Adhan" InputType="InputType.Time" @bind-Value="AdhanTimeEditValue" />
+                }
+            </EditTemplate>
+         </PropertyColumn>
         <PropertyColumn Property="x => GetIqamahTime(x)" Title="Iqamah" Sortable="false" >
              <EditTemplate>
                  @if (CanEdit(context.Item))
@@ -30,6 +37,11 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
                     {
                         <MudTextField T="TimeSpan?" Label="Iqamah" InputType="InputType.Time" @bind-Value="timeEditValue" />
                     }
+
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Info">Can't edit @(context.Item.Name)</MudChip>
                 }
             </EditTemplate> 
         </PropertyColumn>
@@ -81,6 +93,7 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
     private bool usingOffset { get; set; }
     int OffsetValue;
     TimeSpan? timeEditValue;
+    TimeSpan? AdhanTimeEditValue;
     //debug
     private List<string> debugMessages = new();
     int maxLoopValue = 99;
@@ -193,7 +206,33 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         {
             return false;
         }
-        return !item.Name.Contains("Shurooq", StringComparison.CurrentCultureIgnoreCase);
+
+        if (item.Name.Contains("Shurooq", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return false;
+        }
+
+        if (item.Name.Contains("isha", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return true;
+        }
+
+        return true;
+    }
+
+    private bool CanEditAdhan(PrayerTime item)
+    {
+        if (!IsInRole("admin"))
+        {
+            return false;
+        }
+
+        if (item.Name.Contains("isha", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // events
@@ -267,6 +306,11 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         if (loading)
         {
             return loadingString;
+        }
+
+        if (prayer.Name.Equals("Isha",StringComparison.OrdinalIgnoreCase))
+        {
+            // get the prayer time from the data
         }
 
         if (timeFormat24)

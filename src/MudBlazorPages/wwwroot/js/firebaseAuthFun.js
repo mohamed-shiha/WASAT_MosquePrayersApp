@@ -25,7 +25,7 @@ export function initializeFirebaseAuth(app) {
         signIn: async function (email, password) {
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                await this.createUserRole(userCredential.user.uid);
+
                 const IdToken = await userCredential.user.getIdToken();
                 return {
                     Token: IdToken, Email: email
@@ -61,6 +61,7 @@ export function initializeFirebaseAuth(app) {
         register: async function (email, password) {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await this.createUserRole(userCredential.user.uid);
                 return await userCredential.user.getIdToken();
             } catch (error) {
                 throw new Error(error.message);
