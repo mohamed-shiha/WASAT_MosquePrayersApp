@@ -2,6 +2,7 @@
 @inherits AuthenticatedComponentBase
 @inject PrayerTimeService PrayerTimesService
 @inject HttpClient httpClient
+@inject NotificationService NotificationService
 @attribute [RoleAuthorization("admin")]
 
 <PageTitle>PrayerTimes</PageTitle>
@@ -71,9 +72,31 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
             }
         </MudExpansionPanel>
     </MudExpansionPanels>
+<button @onclick="SendNotification">Send Notification</button>
 }
 
+
 @code {
+    private async Task SendNotification()
+    {
+        if (await NotificationService.IsSupportedByBrowserAsync())
+        {
+            var permission = await NotificationService.RequestPermissionAsync();
+            if (permission == NotificationPermission.Granted)
+            {
+                await NotificationService.ShowNotificationAsync("Hello!", "This is a notification from Blazor.");
+            }
+            else
+            {
+                Console.WriteLine("Notification permission not granted.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Notifications not supported by this browser.");
+        }
+    }
+
     private PrayerTimesResult _prayerTimes;
     private PrayerTimeWithIqamah[] BallyhaunisMosqueData;
     private bool timeFormat24 { get; set; } = false;

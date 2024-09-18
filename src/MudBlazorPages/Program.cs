@@ -16,6 +16,7 @@ builder.Services.AddMudServices();
 builder.Services.AddSingleton<PrayerTimeService>();
 builder.Services.AddSingleton<AuthStateProvider>();
 builder.Services.AddScoped<FirebaseAuthService>();
+builder.Services.AddScoped<NotificationService>();
 builder.Services.AddBlazoredLocalStorage();
 
 await builder.Build().RunAsync();
