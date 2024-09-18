@@ -12,7 +12,7 @@
     <MudBlazorPages.Components.CountDown nextPrayerText="@nextPrayerText" CounterValue="@CounterValue" ></MudBlazorPages.Components.CountDown>
 </MudPaper>
 @*Grid*@
-<MudDataGrid T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="!isAuthorized"
+<MudDataGrid T="PrayerTime" Items="@_prayerTimes.Today" Bordered="true" Dense="true" Breakpoint="Breakpoint.None" ReadOnly="@(!IsInRole("admin"))"
 EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges">
     <Columns>
         <PropertyColumn Property="x => x.Name" Sortable="false" Editable="false"/>
@@ -73,7 +73,6 @@ EditMode="DataGridEditMode.Form" EditTrigger=DataGridEditTrigger.OnRowClick Star
         }
         set { _FridayPrayerTimeString = value; }
     }
-    private bool isAuthorized { get; set; } = true;
     //counter
     private double CounterValue { get; set; }
     private string nextPrayerText = "loading";

@@ -5,8 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MudBlazorPages</title>
-    <base href="/WASAT_MosquePrayersApp/" />
-    <!--<base href="/" />-->
+    <!--<base href="/WASAT_MosquePrayersApp/" />-->
+    <base href="/" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="MudBlazorPages.styles.css" rel="stylesheet" />
@@ -31,23 +31,35 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <!-- Firebase SDK for Web -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore-compat.js"></script>
 
-
-    <!-- Your Firebase Configuration -->
     <script src="firebase-config.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { initializeFirestore } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    <!-- Initialize Firebase -->
-    <script>
+
         // Initialize Firebase
-        console.log(firebaseConfig);
-        firebase.initializeApp(firebaseConfig);
-        console.log(firebase);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = initializeFirestore(app, {
+            experimentalForceLongPolling: true,
+            useFetchStreams: false,
+        });
+
+        // Make Firebase services available globally
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+
+        // Import our custom firebaseAuth.js as a module
+        import { initializeFirebaseAuth } from './js/firebaseAuthFun.js';
+
+        // Initialize our custom Firebase auth functions
+        initializeFirebaseAuth();
     </script>
-    <script src="js/firebaseAuth.js"></script>
+
 
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>

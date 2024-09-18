@@ -16,6 +16,13 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-        await AuthService.IsAuthenticatedAsync();
+        try
+        {
+            await AuthService.IsAuthenticatedAsync();
+        }
+        catch(Exception e)
+        {
+            await AuthService.SignOutAsync();
+        }
     }
 }
