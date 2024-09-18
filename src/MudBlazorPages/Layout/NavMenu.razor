@@ -1,4 +1,5 @@
 ﻿@inherits AuthenticatedComponentBase
+@inject CacheService CacheService
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Alarm">Prayer Times</MudNavLink>
     @if (!IsAuthenticated)
@@ -17,7 +18,7 @@
     private async void Logout()
     {
         await AuthService.SignOutAsync();
-        NavigationManager.NavigateTo(NavigationManager.BaseUri);
+        await CacheService.ClearCacheOnLogout();
         NavigationManager.Refresh(true);
         StateHasChanged();
     }

@@ -20,7 +20,7 @@
         {
             await AuthService.IsAuthenticatedAsync();
         }
-        catch(Exception e)
+        catch(Exception)
         {
             await AuthService.SignOutAsync();
         }
